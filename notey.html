@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notey</title>
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            height: 100vh;
+            background-color: #f6f8fa;
+        }
+        .header {
+            background-color: #24292e;
+            color: #fff;
+            padding: 0.5rem;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 250px;
+            padding: 1rem;
+            background-color: #ffffff;
+            border-right: 1px solid #e1e4e8;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-y: auto;
+            transition: transform 0.3s ease-in-out;
+        }
+        .content {
+            flex-grow: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        .tag {
+            padding: 8px;
+            margin: 5px 0;
+            background-color: #e1e4e8;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            width: fit-content;
+            word-wrap: break-word;
+            font-size: 12px;
+        }
+        .tag:hover {
+            background-color: #0366d6;
+            color: #fff;
+        }
+        .note {
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+            background-color: #ffffff;
+        }
+        .note p {
+            margin: 0.5rem 0;
+        }
+        .note-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .note-actions button {
+            margin-left: 5px;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .note-actions button.edit {
+            background-color: #28a745;
+            color: #fff;
+        }
+        .note-actions button.delete {
+            background-color: #d73a49;
+            color: #fff;
+        }
+        textarea, input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        button {
+            background-color: #24292e;
+            color: #fff;
+            padding: 10px 20px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:hover {
+            background-color: #0366d6;
+        }
+
+        /* Hamburger Menu Styles */
+        .hamburger {
+            display: none;
+            cursor: pointer;
+            padding: 10px;
+        }
+        .hamburger-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .menu-content {
+            background-color: #ffffff;
+            width: 100%;
+            padding: 1rem;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+        }
+        .menu-content button {
+            display: block;
+            margin-bottom: 1rem;
+        }
+        /* Adjust sidebar for smaller screens */
+        @media (max-width: 700px) {
+            .sidebar {
+                display: none;
+            }
+            .hamburger {
+                display: block;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>Notey</h1>
+    </div>
+    <div class="container">
+        <div class="sidebar" id="sidebar">
+            <div>
+                <h3>Tags</h3>
+                <div id="tag-list"></div>
+            </div>
+            <div>
+                <button onclick="exportNotes()">Export</button>
+                <input type="file" id="import-file" accept=".csv" style="display: none;" onchange="importNotes(event)">
+                <button onclick="document.getElementById('import-file').click()">Import</button>
+            </div>
+        </div>
+        <div class="content">
+            <h2>Add a Note</h2>
+            <textarea id="note-input" maxlength="300" rows="5" placeholder="Enter your note here..."></textarea>
+            <input type="text" id="tag-input" placeholder="Enter tags, separated by commas">
+            <button onclick="addNote()">Add Note</button>
+            <h2>Notes</h2>
+            <div id="note-list"></div>
+        </div>
+    </div>
+    <div class="hamburger" onclick="toggleMenu()">
+        &#9776; <!-- Hamburger Icon -->
+    </div>
+    <div class="hamburger-menu" id="hamburgerMenu">
+        <div class="menu-content">
+            <button onclick="toggleMenu()">Close Menu</button>
+            <h3>Tags</h3>
+            <div id="tag-list-hamburger"></div>
+            <button onclick="exportNotes()">Export</button>
+            <input type="file" id="import-file-hamburger" accept=".csv" style="display: none;" onchange="importNotes(event)">
+            <button onclick="document.getElementById('import-file-hamburger').click()">Import</button>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            loadNotes();
+            loadTags();
+        });
+
+        function addNote() {
+            const noteInput = document.getElementById('note-input');
+            const tagInput = document.getElementById('tag-input');
+            const noteText = noteInput.value.trim();
+            const tags = tagInput.value.trim().split(',').map(tag => tag.trim()).filter(tag => tag);
+
+            if (noteText && tags.length > 0) {
+                const note = {
+                    text: noteText,
+                    tags: tags,
+                    id: Date.now
+                    (),
+                    date: new Date().toLocaleString()
+                };
+
+                let notes = JSON.parse(localStorage.getItem('notes')) || [];
+                notes.push(note);
+                localStorage.setItem('notes', JSON.stringify(notes));
+
+                noteInput.value = '';
+                tagInput.value = '';
+
+                loadNotes();
+                loadTags();
+            } else {
+                alert('Please enter a note and at least one tag.');
+            }
+        }
+
+        function loadNotes() {
+            const notes = JSON.parse(localStorage.getItem('notes')) || [];
+            const noteList = document.getElementById('note-list');
+            noteList.innerHTML = '';
+
+            notes.forEach(note => {
+                const noteElement = document.createElement('div');
+                noteElement.className = 'note';
+                noteElement.innerHTML = `
+                    <p>${note.text}</p>
+                    <p><strong>Tags:</strong> ${note.tags.join(', ')}</p>
+                    <p><strong>Date:</strong> ${note.date}</p>
+                    <div class="note-actions">
+                        <button class="edit" onclick="editNote(${note.id})">Edit</button>
+                        <button class="delete" onclick="deleteNote(${note.id})">Delete</button>
+                    </div>
+                `;
+                noteList.appendChild(noteElement);
+            });
+        }
+
+        function loadTags() {
+            const notes = JSON.parse(localStorage.getItem('notes')) || [];
+            const tagList = document.getElementById('tag-list');
+            const tagListHamburger = document.getElementById('tag-list-hamburger');
+            const tags = new Set();
+
+            notes.forEach(note => {
+                note.tags.forEach(tag => tags.add(tag));
+            });
+
+            tagList.innerHTML = '';
+            tagListHamburger.innerHTML = '';
+
+            tags.forEach(tag => {
+                const tagElement = document.createElement('div');
+                const tagElementHamburger = document.createElement('div');
+                tagElement.className = 'tag';
+                tagElementHamburger.className = 'tag';
+                tagElement.innerText = tag;
+                tagElementHamburger.innerText = tag;
+                tagElement.onclick = () => filterNotesByTag(tag);
+                tagElementHamburger.onclick = () => {
+                    filterNotesByTag(tag);
+                    toggleMenu();
+                };
+                tagList.appendChild(tagElement);
+                tagListHamburger.appendChild(tagElementHamburger);
+            });
+        }
+
+        function filterNotesByTag(tag) {
+            const notes = JSON.parse(localStorage.getItem('notes')) || [];
+            const noteList = document.getElementById('note-list');
+            noteList.innerHTML = '';
+
+            notes.filter(note => note.tags.includes(tag)).forEach(note => {
+                const noteElement = document.createElement('div');
+                noteElement.className = 'note';
+                noteElement.innerHTML = `
+                    <p>${note.text}</p>
+                    <p><strong>Tags:</strong> ${note.tags.join(', ')}</p>
+                    <p><strong>Date:</strong> ${note.date}</p>
+                    <div class="note-actions">
+                        <button class="edit" onclick="editNote(${note.id})">Edit</button>
+                        <button class="delete" onclick="deleteNote(${note.id})">Delete</button>
+                    </div>
+                `;
+                noteList.appendChild(noteElement);
+            });
+        }
+
+        function editNote(id) {
+            const notes = JSON.parse(localStorage.getItem('notes')) || [];
+            const note = notes.find(note => note.id === id);
+            if (note) {
+                const newNoteText = prompt('Edit your note:', note.text);
+                const newTags = prompt('Edit your tags (comma separated):', note.tags.join(', '));
+                if (newNoteText !== null && newTags !== null) {
+                    note.text = newNoteText.trim();
+                    note.tags = newTags.split(',').map(tag => tag.trim()).filter(tag => tag);
+                    localStorage.setItem('notes', JSON.stringify(notes));
+                    loadNotes();
+                    loadTags();
+                }
+            }
+        }
+
+        function deleteNote(id) {
+            let notes = JSON.parse(localStorage.getItem('notes')) || [];
+            notes = notes.filter(note => note.id !== id);
+            localStorage.setItem('notes', JSON.stringify(notes));
+            loadNotes();
+            loadTags();
+        }
+
+        function exportNotes() {
+            const notes = JSON.parse(localStorage.getItem('notes')) || [];
+            let csvContent = "data:text/csv;charset=utf-8,";
+            csvContent += "Text,Tags,Date\n";
+            notes.forEach(note => {
+                const noteRow = `"${note.text.replace(/"/g, '""')}","${note.tags.join(', ')}","${note.date}"\n`;
+                csvContent += noteRow;
+            });
+
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "notes.csv");
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function importNotes(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const contents = e.target.result;
+                const rows = contents.split('\n').slice(1);
+                const notes =
+                rows.map(row => {
+                    const [text, tags, date] = row.split('","').map(item => item.replace(/(^"|"$)/g, ''));
+                    return {
+                        text: text || "",
+                        tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
+                        date: date || "",
+                        id: Date.now() + Math.random()
+                    };
+                }).filter(note => note.text && note.tags.length > 0 && note.date);
+
+                let existingNotes = JSON.parse(localStorage.getItem('notes')) || [];
+                existingNotes = existingNotes.concat(notes);
+                localStorage.setItem('notes', JSON.stringify(existingNotes));
+
+                loadNotes();
+                loadTags();
+            };
+            reader.readAsText(file);
+        }
+
+        function toggleMenu() {
+            const hamburgerMenu = document.getElementById('hamburgerMenu');
+            const sidebar = document.getElementById('sidebar');
+            if (hamburgerMenu.style.display === 'block') {
+                hamburgerMenu.style.display = 'none';
+                sidebar.style.transform = 'translateX(0)';
+            } else {
+                hamburgerMenu.style.display = 'block';
+                sidebar.style.transform = 'translateX(-250px)';
+            }
+        }
+    </script>
+</body>
+</html>
