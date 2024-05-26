@@ -167,6 +167,9 @@
                display: block;
            }
        }
+       #override-checkbox, #auto-export-checkbox {
+           width: 20px;
+       }
    </style>
 </head>
 <body>
@@ -184,7 +187,10 @@
                <div id="tag-list"></div>
            </div>
            <div>
-               <label>auto export</label><input type="checkbox" id="auto-export-checkbox">
+               <div id="auto-export-container">
+                   <label>Auto export</label>
+                   <input type="checkbox" id="auto-export-checkbox">
+               </div>
                <button onclick="exportNotes()">Export</button>
                <input type="file" id="import-file" accept=".csv" style="display: none;" onchange="importNotes(event)">
                <button onclick="document.getElementById('import-file').click()">Import</button>
@@ -192,8 +198,13 @@
        </div>
        <div class="content">
            <h2>Add a Note</h2>
-           <textarea id="note-input" maxlength="300" rows="5" placeholder="Enter your note here..." oninput="updateCharacterCount()"></textarea>
-           <div id="character-count">0/300 characters</div>
+           <textarea id="note-input" rows="5" placeholder="Enter your note here..." oninput="updateCharacterCount()"></textarea>
+           <div id="character-count-container">
+               <span id="character-count">0/300 characters</span>
+               <label>
+                   <input type="checkbox" id="override-checkbox" onchange="updateCharacterCount()"> Override
+               </label>
+           </div>
            <input type="text" id="tag-input" placeholder="Enter tags, separated by commas">
            <button onclick="addNote()">Add Note</button>
            <h2>Notes</h2>
@@ -208,6 +219,10 @@
            <button onclick="toggleMenu()">Close Menu</button>
            <h3>Tags</h3>
            <div id="tag-list-hamburger"></div>
+           <div id="auto-export-container-hamburger">
+               <label>Auto export</label>
+               <input type="checkbox" id="auto-export-checkbox-hamburger">
+           </div>
            <button onclick="exportNotes()">Export</button>
            <input type="file" id="import-file-hamburger" accept=".csv" style="display: none;" onchange="importNotes(event)">
            <button onclick="document.getElementById('import-file-hamburger').click()">Import</button>
@@ -217,233 +232,271 @@
        document.addEventListener('DOMContentLoaded', (event) => {
            loadNotes();
            loadTags();
+           syncCheckboxes();
        });
+
+       function syncCheckboxes() {
+           const sidebarCheckbox = document.getElementById('auto-export-checkbox');
+           const hamburgerCheckbox = document.getElementById('auto-export-checkbox-hamburger');
+
+           // Sync initial state
+           hamburgerCheckbox.checked = sidebarCheckbox.checked;
+
+           sidebarCheckbox.addEventListener('change', () => {
+               hamburgerCheckbox.checked = sidebarCheckbox.checked;
+           });
+
+           hamburgerCheckbox.addEventListener('change', () => {
+               sidebarCheckbox.checked = hamburgerCheckbox.checked;
+           });
+       }
 
        function addNote() {
            const noteInput = document.getElementById('note-input');
            const tagInput = document.getElementById('tag-input');
+           const overrideCheckbox = document.getElementById('override-checkbox');
            const noteText = noteInput.value.trim();
            const tags = tagInput.value.trim().split(',').map(tag => tag.trim()).filter(tag => tag);
 
-           if (noteText && tags.length > 0) {
-               const note = {
-                   text: noteText,
-                   tags: tags,
-                   id: Date.now(),
-date: new Date().toLocaleString()
-};
-let notes = JSON.parse(localStorage.getItem('notes')) || [];
-            notes.push(note);
-            localStorage.setItem('notes', JSON.stringify(notes));
+           if (!noteText) {
+               alert('Please enter a note.');
+               return;
+           }
 
-            noteInput.value = '';
-            tagInput.value = '';
+           if (tags.length === 0) {
+               alert('Please enter at least one tag.');
+               return;
+           }
 
-            loadNotes();
-            loadTags();
-        } else {
-            alert('Please enter a note and at least one tag.');
-        }
-        const autoExportCheckbox = document.getElementById('auto-export-checkbox');
-           if (autoExportCheckbox.checked) {
+           if (!overrideCheckbox.checked && noteText.length > 300) {
+               alert('Note exceeds 300 characters.');
+               return;
+           }
+
+           const notes = JSON.parse(localStorage.getItem('notes')) || [];
+           const newNote = {
+               id: Date.now(),
+               text: noteText,
+               tags: tags,
+               date: new Date().toLocaleString()
+           };
+
+           notes.push(newNote);
+           localStorage.setItem('notes', JSON.stringify(notes));
+
+           noteInput.value = '';
+           tagInput.value = '';
+           updateCharacterCount();
+           loadNotes();
+           loadTags();
+
+           const sidebarCheckbox = document.getElementById('auto-export-checkbox');
+           if (sidebarCheckbox.checked) {
                exportNotes();
            }
-    }
+       }
 
-    function loadNotes() {
-        const notes = JSON.parse(localStorage.getItem('notes')) || [];
-        const noteList = document.getElementById('note-list');
-        noteList.innerHTML = '';
+       function loadNotes() {
+           const notes = JSON.parse(localStorage.getItem('notes')) || [];
+           const noteList = document.getElementById('note-list');
+           noteList.innerHTML = '';
 
-        notes.forEach(note => {
-            const noteElement = document.createElement('div');
-            noteElement.className = 'note';
-            noteElement.innerHTML = `
-                <p>${note.text}</p>
-                <p><strong>Tags:</strong> ${note.tags.join(', ')}</p>
-                <p><strong>Date:</strong> ${note.date}</p>
-                <div class="note-actions">
-                    <button class="edit" onclick="editNote(${note.id})">Edit</button>
-                    <button class="delete" onclick="deleteNote(${note.id})">Delete</button>
-                </div>
-            `;
-            noteList.appendChild(noteElement);
-        });
-    }
+           notes.sort((a, b) => new Date(b.date) - new Date(a.date));
 
-    function loadTags() {
-        const notes = JSON.parse(localStorage.getItem('notes')) || [];
-        const tagList = document.getElementById('tag-list');
-        const tagListHamburger = document.getElementById('tag-list-hamburger');
-        const tags = new Set();
+           notes.forEach(note => {
+               const noteElement = document.createElement('div');
+               noteElement.className = 'note';
+               noteElement.innerHTML = `
+                   <p>${note.text}</p>
+                   <p><strong>Tags:</strong> ${note.tags.join(', ')}</p>
+                   <p><strong>Date:</strong> ${note.date}</p>
+                   <div class="note-actions">
+                       <button class="edit" onclick="editNote(${note.id})">Edit</button>
+                       <button class="delete" onclick="deleteNote(${note.id})">Delete</button>
+                   </div>
+               `;
+               noteList.appendChild(noteElement);
+           });
+       }
 
-        notes.forEach(note => {
-            note.tags.forEach(tag => tags.add(tag));
-        });
+       function loadTags() {
+           const notes = JSON.parse(localStorage.getItem('notes')) || [];
+           const tagList = document.getElementById('tag-list');
+           const tagListHamburger = document.getElementById('tag-list-hamburger');
+           const tags = new Set();
 
-        tagList.innerHTML = '';
-        tagListHamburger.innerHTML = '';
+           notes.forEach(note => {
+               note.tags.forEach(tag => tags.add(tag));
+           });
 
-        tags.forEach(tag => {
-            const tagElement = document.createElement('div');
-            const tagElementHamburger = document.createElement('div');
-            tagElement.className = 'tag';
-            tagElementHamburger.className = 'tag';
-            tagElement.innerText = tag;
-            tagElementHamburger.innerText = tag;
-            tagElement.onclick = () => filterNotesByTag(tag);
-            tagElementHamburger.onclick = () => {
-                filterNotesByTag(tag);
-                toggleMenu();
-            };
-            tagList.appendChild(tagElement);
-            tagListHamburger.appendChild(tagElementHamburger);
-        });
-    }
+           tagList.innerHTML = '';
+           tagListHamburger.innerHTML = '';
 
-    function filterNotesByTag(tag) {
-        const notes = JSON.parse(localStorage.getItem('notes')) || [];
-        const noteList = document.getElementById('note-list');
-        noteList.innerHTML = '';
+           tags.forEach(tag => {
+               const tagElement = document.createElement('div');
+               const tagElementHamburger = document.createElement('div');
+               tagElement.className = 'tag';
+               tagElementHamburger.className = 'tag';
+               tagElement.innerText = tag;
+               tagElementHamburger.innerText = tag;
+               tagElement.onclick = () => filterNotesByTag(tag);
+               tagElementHamburger.onclick = () => {
+                   filterNotesByTag(tag);
+                   toggleMenu();
+               };
+               tagList.appendChild(tagElement);
+               tagListHamburger.appendChild(tagElementHamburger);
+           });
+       }
 
-        notes.filter(note => note.tags.includes(tag)).forEach(note => {
-            const noteElement = document.createElement('div');
-            noteElement.className = 'note';
-            noteElement.innerHTML = `
-                <p>${note.text}</p>
-                <p><strong>Tags:</strong> ${note.tags.join(', ')}</p>
-                <p><strong>Date:</strong> ${note.date}</p>
-                <div class="note-actions">
-                    <button class="edit" onclick="editNote(${note.id})">Edit</button>
-                    <button class="delete" onclick="deleteNote(${note.id})">Delete</button>
-                </div>
-            `;
-            noteList.appendChild(noteElement);
-        });
-    }
+       function filterNotesByTag(tag) {
+           const notes = JSON.parse(localStorage.getItem('notes')) || [];
+           const noteList = document.getElementById('note-list');
+           noteList.innerHTML = '';
 
-    function editNote(id) {
-        const notes = JSON.parse(localStorage.getItem('notes')) || [];
-        const note = notes.find(note => note.id === id);
-        if (note) {
-            const newNoteText = prompt('Edit your note:', note.text);
-            const newTags = prompt('Edit your tags (comma separated):', note.tags.join(', '));
-            if (newNoteText !== null && newTags !== null) {
-                note.text = newNoteText.trim();
-                note.tags = newTags.split(',').map(tag => tag.trim()).filter(tag => tag);
-                localStorage.setItem('notes', JSON.stringify(notes));
-                loadNotes();
-                loadTags();
-            }
-        }
-    }
+           notes.filter(note => note.tags.includes(tag)).forEach(note => {
+               const noteElement = document.createElement('div');
+               noteElement.className = 'note';
+               noteElement.innerHTML = `
+                   <p>${note.text}</p>
+                   <p><strong>Tags:</strong> ${note.tags.join(', ')}</p>
+                   <p><strong>Date:</strong> ${note.date}</p>
+                   <div class="note-actions">
+                       <button class="edit" onclick="editNote(${note.id})">Edit</button>
+                       <button class="delete" onclick="deleteNote(${note.id})">Delete</button>
+                   </div>
+               `;
+               noteList.appendChild(noteElement);
+           });
+       }
 
-    function deleteNote(id) {
-        let notes = JSON.parse(localStorage.getItem('notes')) || [];
-        notes = notes.filter(note => note.id !== id);
-        localStorage.setItem('notes', JSON.stringify(notes));
-        loadNotes();
-        loadTags();
-    }
+       function editNote(id) {
+           const notes = JSON.parse(localStorage.getItem('notes')) || [];
+           const note = notes.find(note => note.id === id);
+           if (note) {
+               const newNoteText = prompt('Edit your note:', note.text);
+               const newTags = prompt('Edit your tags (comma separated):', note.tags.join(', '));
+               if (newNoteText !== null && newTags !== null) {
+                   note.text = newNoteText.trim();
+                   note.tags = newTags.split(',').map(tag => tag.trim()).filter(tag => tag);
+                   localStorage.setItem('notes', JSON.stringify(notes));
+                   loadNotes();
+                   loadTags();
+               }
+           }
+       }
 
-    function exportNotes() {
-        const notes = JSON.parse(localStorage.getItem('notes')) || [];
-        let csvContent = "data:text/csv;charset=utf-8,";
-        csvContent += "Text,Tags,Date\n";
-        notes.forEach(note => {
-            const noteRow = `"${note.text.replace(/"/g, '""')}","${note.tags.join(', ')}","${note.date}"\n`;
-            csvContent += noteRow;
-        });
+       function deleteNote(id) {
+           let notes = JSON.parse(localStorage.getItem('notes')) || [];
+           notes = notes.filter(note => note.id !== id);
+           localStorage.setItem('notes', JSON.stringify(notes));
+           loadNotes();
+           loadTags();
+       }
 
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", "notes.csv");
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    }
+       function exportNotes() {
+           const notes = JSON.parse(localStorage.getItem('notes')) || [];
+           let csvContent = "data:text/csv;charset=utf-8,";
+           csvContent += "Text,Tags,Date\n";
+           notes.forEach(note => {
+               const noteRow = `"${note.text.replace(/"/g, '""')}","${note.tags.join(', ')}","${note.date}"\n`;
+               csvContent += noteRow;
+           });
 
-    function importNotes(event) {
-        const file = event.target.files[0];
-        if (!file) return;
+           const encodedUri = encodeURI(csvContent);
+           const link = document.createElement("a");
+           link.setAttribute("href", encodedUri);
+           link.setAttribute("download", "notes.csv");
+           document.body.appendChild(link);
+           link.click();
+           document.body.removeChild(link);
+       }
 
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const contents = e.target.result;
-            const rows = contents.split('\n').slice(1);
-            const notes =
-            rows.map(row => {
-                const [text, tags, date] = row.split('","').map(item => item.replace(/(^"|"$)/g, ''));
-                return {
-                    text: text || "",
-                    tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-                    date: date || "",
-                    id: Date.now() + Math.random()
-                };
-            }).filter(note => note.text && note.tags.length > 0 && note.date);
+       function importNotes(event) {
+           const file = event.target.files[0];
+           if (!file) return;
 
-            let existingNotes = JSON.parse(localStorage.getItem('notes')) || [];
-            existingNotes = existingNotes.concat(notes);
-            localStorage.setItem('notes', JSON.stringify(existingNotes));
+           const reader = new FileReader();
+           reader.onload = function(e) {
+               const contents = e.target.result;
+               const rows = contents.split('\n').slice(1);
+               const notes =
+               rows.map(row => {
+                   const [text, tags, date] = row.split('","').map(item => item.replace(/(^"|"$)/g, ''));
+                   return {
+                       text: text || "",
+                       tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
+                       date: date || "",
+                       id: Date.now() + Math.random()
+                   };
+               }).filter(note => note.text && note.tags.length > 0 && note.date);
 
-            loadNotes();
-            loadTags();
-        };
-        reader.readAsText(file);
-    }
+               let existingNotes = JSON.parse(localStorage.getItem('notes')) || [];
+               existingNotes = existingNotes.concat(notes);
+               localStorage.setItem('notes', JSON.stringify(existingNotes));
 
-    function toggleMenu() {
-        const hamburgerMenu = document.getElementById('hamburgerMenu');
-        const sidebar = document.getElementById('sidebar');
-        if (hamburgerMenu.style.display === 'block') {
-            hamburgerMenu.style.display = 'none';
-            sidebar.style.transform = 'translateX(0)';
-        } else {
-            hamburgerMenu.style.display = 'block';
-            sidebar.style.transform = 'translateX(-250px)';
-        }
-    }
-    function updateCharacterCount() {
-        const noteInput = document.getElementById('note-input');
-        const characterCount = document.getElementById('character-count');
-        const remainingChars = 300 - noteInput.value.length;
-        characterCount.textContent = `${noteInput.value.length}/300 characters`;
-        if (remainingChars < 0) {
-            characterCount.style.color = 'red';
-        } else {
-            characterCount.style.color = 'inherit';
-        }
-    }
+               loadNotes();
+               loadTags();
+           };
+           reader.readAsText(file);
+       }
 
-    function searchNotes() {
-    const searchInput = document.getElementById('search-input').value.toLowerCase();
-    const notes = JSON.parse(localStorage.getItem('notes')) || [];
-    const noteList = document.getElementById('note-list');
-    noteList.innerHTML = '';
+       function toggleMenu() {
+           const hamburgerMenu = document.getElementById('hamburgerMenu');
+           const sidebar = document.getElementById('sidebar');
+           if (hamburgerMenu.style.display === 'block') {
+               hamburgerMenu.style.display = 'none';
+               sidebar.style.transform = 'translateX(0)';
+           } else {
+               hamburgerMenu.style.display = 'block';
+               sidebar.style.transform = 'translateX(-250px)';
+           }
+       }
 
-    notes.forEach(note => {
-        const noteText = note.text.toLowerCase();
-        const noteTags = note.tags.join(', ').toLowerCase();
-        if (noteText.includes(searchInput) || noteTags.includes(searchInput)) {
-            const noteElement = document.createElement('div');
-            noteElement.className = 'note';
+       function updateCharacterCount() {
+           const noteInput = document.getElementById('note-input');
+           const characterCount = document.getElementById('character-count');
+           const overrideCheckbox = document.getElementById('override-checkbox');
+           const maxChars = 300;
 
-            const noteContent = `
-                <p>${note.text}</p>
-                <p><strong>Tags:</strong> ${note.tags.join(', ')}</p>
-                <p><strong>Date:</strong> ${note.date}</p>
-                <div class="note-actions">
-                    <button class="edit" onclick="editNote(${note.id})">Edit</button>
-                    <button class="delete" onclick="deleteNote(${note.id})">Delete</button>
-                </div>
-            `;
+           if (overrideCheckbox.checked) {
+               characterCount.textContent = `${noteInput.value.length} characters`;
+               characterCount.style.color = 'inherit';
+           } else {
+               const remainingChars = maxChars - noteInput.value.length;
+               characterCount.textContent = `${noteInput.value.length}/${maxChars} characters`;
+               characterCount.style.color = remainingChars < 0 ? 'red' : 'inherit';
+           }
+       }
 
-            noteElement.innerHTML = noteContent;
-            noteList.appendChild(noteElement);
-        }
-    });
-}
-</script>
+       function searchNotes() {
+           const searchInput = document.getElementById('search-input').value.toLowerCase();
+           const notes = JSON.parse(localStorage.getItem('notes')) || [];
+           const noteList = document.getElementById('note-list');
+           noteList.innerHTML = '';
+
+           notes.forEach(note => {
+               const noteText = note.text.toLowerCase();
+               const noteTags = note.tags.join(', ').toLowerCase();
+               if (noteText.includes(searchInput) || noteTags.includes(searchInput)) {
+                   const noteElement = document.createElement('div');
+                   noteElement.className = 'note';
+
+                   const noteContent = `
+                       <p>${note.text}</p>
+                       <p><strong>Tags:</strong> ${note.tags.join(', ')}</p>
+                       <p><strong>Date:</strong> ${note.date}</p>
+                       <div class="note-actions">
+                           <button class="edit" onclick="editNote(${note.id})">Edit</button>
+                           <button class="delete" onclick="deleteNote(${note.id})">Delete</button>
+                       </div>
+                   `;
+
+                   noteElement.innerHTML = noteContent;
+                   noteList.appendChild(noteElement);
+               }
+           });
+       }
+   </script>
 </body>
 </html>
