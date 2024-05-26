@@ -184,6 +184,7 @@
                <div id="tag-list"></div>
            </div>
            <div>
+               <label>auto export</label><input type="checkbox" id="auto-export-checkbox">
                <button onclick="exportNotes()">Export</button>
                <input type="file" id="import-file" accept=".csv" style="display: none;" onchange="importNotes(event)">
                <button onclick="document.getElementById('import-file').click()">Import</button>
@@ -243,6 +244,10 @@ let notes = JSON.parse(localStorage.getItem('notes')) || [];
         } else {
             alert('Please enter a note and at least one tag.');
         }
+        const autoExportCheckbox = document.getElementById('auto-export-checkbox');
+           if (autoExportCheckbox.checked) {
+               exportNotes();
+           }
     }
 
     function loadNotes() {
