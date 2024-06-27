@@ -1,4 +1,13 @@
 # notey
-A single HTML file that lets you save notes (up to 300 characters), tag them, and export to CSV. [Demo](https://zerosonesfun.github.io/notey/notey.html)
+A single HTML file that lets you save notes. [Demo](https://zerosonesfun.github.io/notey/notey.html)
+
+Features:
+- Save, edit, delete
+- Copy any note to your clipboard
+- Search
+- Tagging
+- Export/Import (CSV)
+- Optional auto-export
+- Character limit, or override
 
 ![screenshot](https://github.com/zerosonesfun/notey/blob/main/notey.png)
