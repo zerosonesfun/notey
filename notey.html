@@ -1,503 +1,625 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-   <meta charset="UTF-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Notey</title>
-   <style>
-       body {
-           display: flex;
-           flex-direction: column;
-           font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-           margin: 0;
-           height: 100vh;
-           background-color: #f6f8fa;
-       }
-       .header {
-           background-color: #24292e;
-           color: #fff;
-           padding: 1rem;
-           text-align: center;
-           display: flex;
-           justify-content: space-between;
-           align-items: center;
-       }
-       .search-box {
-           display: flex;
-           align-items: center;
-           margin-right: 0.3rem;
-       }
-       .search-box input {
-           padding: 0.5rem;
-           border: none;
-           border-radius: 4px;
-           margin-right: 0.5rem;
-           width: 130px;
-       }
-       .search-box button {
-           background-color: #0366d6;
-           color: #fff;
-           border: none;
-           border-radius: 4px;
-           padding: 0.5rem;
-           cursor: pointer;
-           margin-top: 0;
-       }
-       .container {
-           display: flex;
-           flex-grow: 1;
-           overflow: hidden;
-       }
-       .sidebar {
-           width: 250px;
-           padding: 1rem;
-           background-color: #ffffff;
-           border-right: 1px solid #e1e4e8;
-           display: flex;
-           flex-direction: column;
-           justify-content: space-between;
-           overflow-y: auto;
-           transition: transform 0.3s ease-in-out;
-       }
-       .content {
-           flex-grow: 1;
-           padding: 2rem;
-           overflow-y: auto;
-       }
-       .tag {
-           padding: 8px;
-           margin: 5px 0;
-           background-color: #e1e4e8;
-           border-radius: 6px;
-           cursor: pointer;
-           text-align: center;
-           width: fit-content;
-           word-wrap: break-word;
-           font-size: 12px;
-       }
-       .tag:hover {
-           background-color: #0366d6;
-           color: #fff;
-       }
-       .note {
-           border: 1px solid #e1e4e8;
-           border-radius: 6px;
-           padding: 1rem;
-           margin: 1rem 0;
-           background-color: #ffffff;
-       }
-       .note p {
-           margin: 0.5rem 0;
-       }
-       .note-actions {
-           display: flex;
-           justify-content: flex-end;
-       }
-       .note-actions button {
-           margin-left: 5px;
-           padding: 5px 10px;
-           border: none;
-           border-radius: 4px;
-           cursor: pointer;
-       }
-       .note-actions button.edit {
-           background-color: #28a745;
-           color: #fff;
-       }
-       .note-actions button.delete {
-           background-color: #d73a49;
-           color: #fff;
-       }
-       textarea, input {
-           width: 95%;
-           padding: 10px;
-           margin: 10px 0;
-           border: 1px solid #e1e4e8;
-           border-radius: 6px;
-           font-size: 1rem;
-       }
-       button {
-           background-color: #24292e;
-           color: #fff;
-           padding: 10px 20px;
-           margin-top: 10px;
-           border: none;
-           border-radius: 6px;
-           cursor: pointer;
-           font-size: 1rem;
-       }
-       button:hover {
-           background-color: #0366d6;
-       }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notey</title>
+    <meta name="author" content="Billy Wilcosky">
+    <meta name="version" content="1.2.0">
+    <meta name="license" content="MIT">
+    <meta name="website" content="https://www.wilcosky.com/skywolf">
+    <style>
+        body {
+            display: flex;
+            flex-direction: column;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            height: 100vh;
+            background-color: #f6f8fa;
+        }
+        .header {
+            background-color: #24292e;
+            color: #fff;
+            padding: 1rem;
+            text-align: center;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .search-box {
+            display: flex;
+            align-items: center;
+            margin-right: 0.3rem;
+        }
+        .search-box input {
+            padding: 0.5rem;
+            border: none;
+            border-radius: 4px;
+            margin-right: 0.5rem;
+            width: 130px;
+        }
+        .search-box button {
+            background-color: #0366d6;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            padding: 0.5rem;
+            cursor: pointer;
+            margin-top: 0;
+        }
+        .container {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+        }
+        .sidebar {
+            width: 250px;
+            padding: 1rem;
+            background-color: #ffffff;
+            border-right: 1px solid #e1e4e8;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            overflow-y: auto;
+            transition: transform 0.3s ease-in-out;
+            flex-shrink: 0; /* Prevent shrinking */
+        }
+        .content {
+            flex-grow: 1;
+            padding: 2rem;
+            overflow-y: auto;
+        }
+        .tag {
+            padding: 8px;
+            margin: 5px 0;
+            background-color: #e1e4e8;
+            border-radius: 6px;
+            cursor: pointer;
+            text-align: center;
+            width: fit-content;
+            word-wrap: break-word;
+            font-size: 12px;
+        }
+        .tag:hover {
+            background-color: #0366d6;
+            color: #fff;
+        }
+        .note {
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            padding: 1rem;
+            margin: 1rem 0;
+            background-color: #ffffff;
+        }
+        .note p {
+            margin: 0.5rem 0;
+        }
+        .note-actions {
+            display: flex;
+            justify-content: flex-end;
+        }
+        .note-actions button {
+            margin-left: 5px;
+            padding: 5px 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        .note-actions button.edit {
+            background-color: #28a745;
+            color: #fff;
+        }
+        .note-actions button.delete {
+            background-color: #d73a49;
+            color: #fff;
+        }
+        textarea, input {
+            width: 95%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #e1e4e8;
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+        button {
+            background-color: #24292e;
+            color: #fff;
+            padding: 10px 20px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+        button:hover {
+            background-color: #0366d6;
+        }
 
-       /* Hamburger Menu Styles */
-       .hamburger {
-           display: none;
-           cursor: pointer;
-           padding: 10px;
-       }
-       .hamburger-menu {
-           position: fixed;
-           top: 0;
-           left: 0;
-           width: 100%;
-           height: 100%;
-           background-color: rgba(0, 0, 0, 0.5);
-           z-index: 9999;
-           display: none;
-           justify-content: center;
-           align-items: center;
-       }
-       .menu-content {
-           background-color: #ffffff;
-           width: 100%;
-           height: 100vh;
-           padding: 1rem;
-           box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
-       }
-       .menu-content button {
-           display: block;
-           margin-bottom: 1rem;
-       }
-       /* Adjust sidebar for smaller screens */
-       @media (max-width: 700px) {
-           .sidebar {
-               display: none;
-           }
-           .hamburger {
-               display: block;
-           }
-       }
-       #override-checkbox, #auto-export-checkbox {
-           width: 20px;
-       }
-   </style>
+        /* Hamburger Menu Styles */
+        .hamburger {
+            display: none;
+            cursor: pointer;
+            padding: 10px;
+        }
+        .hamburger-menu {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+        .menu-content {
+            background-color: #ffffff;
+            width: 100%;
+            height: 100vh;
+            padding: 1rem;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+        }
+        .menu-content button {
+            display: block;
+            margin-bottom: 1rem;
+        }
+        #auto-export-checkbox-hamburger {
+            width: 20px;
+        }
+        /* Adjust sidebar for smaller screens */
+        @media (max-width: 700px) {
+            .sidebar {
+                display: none;
+            }
+            .hamburger {
+                display: block;
+            }
+        }
+        #override-checkbox, #auto-export-checkbox {
+            width: 20px;
+        }
+    </style>
 </head>
 <body>
-   <div class="header">
-       <h1>Notey</h1>
-       <div class="search-box">
-           <input type="text" id="search-input" placeholder="Search notes...">
-           <button onclick="searchNotes()">Search</button>
-       </div>
-   </div>
-   <div class="container">
-       <div class="sidebar" id="sidebar">
-           <div>
-               <h3>Tags</h3>
-               <div id="tag-list"></div>
-           </div>
-           <div>
-               <div id="auto-export-container">
-                   <label>Auto export</label>
-                   <input type="checkbox" id="auto-export-checkbox">
-               </div>
-               <button onclick="exportNotes()">Export</button>
-               <input type="file" id="import-file" accept=".csv" style="display: none;" onchange="importNotes(event)">
-               <button onclick="document.getElementById('import-file').click()">Import</button>
-           </div>
-       </div>
-       <div class="content">
-           <h2>Add a Note</h2>
-           <textarea id="note-input" rows="5" placeholder="Enter your note here..." oninput="updateCharacterCount()"></textarea>
-           <div id="character-count-container">
-               <span id="character-count">0/300 characters</span>
-               <label>
-                   <input type="checkbox" id="override-checkbox" onchange="updateCharacterCount()"> Override
-               </label>
-           </div>
-           <input type="text" id="tag-input" placeholder="Enter tags, separated by commas">
-           <button onclick="addNote()">Add Note</button>
-           <h2>Notes</h2>
-           <div id="note-list"></div>
-       </div>
-   </div>
-   <div class="hamburger" onclick="toggleMenu()">
-       &#9776; <!-- Hamburger Icon -->
-   </div>
-   <div class="hamburger-menu" id="hamburgerMenu">
-       <div class="menu-content">
-           <button onclick="toggleMenu()">Close Menu</button>
-           <h3>Tags</h3>
-           <div id="tag-list-hamburger"></div>
-           <div id="auto-export-container-hamburger">
-               <label>Auto export</label>
-               <input type="checkbox" id="auto-export-checkbox-hamburger">
-           </div>
-           <button onclick="exportNotes()">Export</button>
-           <input type="file" id="import-file-hamburger" accept=".csv" style="display: none;" onchange="importNotes(event)">
-           <button onclick="document.getElementById('import-file-hamburger').click()">Import</button>
-       </div>
-   </div>
-   <script>
-       document.addEventListener('DOMContentLoaded', (event) => {
-           loadNotes();
-           loadTags();
-           syncCheckboxes();
-       });
+    <div class="header">
+        <h1>Notey</h1>
+        <div class="search-box">
+            <input type="text" id="search-input" placeholder="Search notes...">
+            <button onclick="searchNotes()">Search</button>
+        </div>
+    </div>
+    <div class="container">
+        <div class="sidebar" id="sidebar">
+            <div>
+                <h3>Tags</h3>
+                <div id="tag-list"></div>
+            </div>
+            <div>
+                <div id="auto-export-container">
+                    <label>Auto export</label>
+                    <input type="checkbox" id="auto-export-checkbox">
+                </div>
+                <button onclick="exportNotes()">Export</button>
+                <input type="file" id="import-file" accept=".csv" style="display: none;" onchange="importNotes(event)">
+                <button onclick="document.getElementById('import-file').click()">Import</button>
+            </div>
+        </div>
+        <div class="content">
+            <h2>Add a Note</h2>
+            <textarea id="note-input" rows="5" placeholder="Enter your note here..." oninput="updateCharacterCount()"></textarea>
+            <div id="character-count-container">
+                <span id="character-count">0/300 characters</span>
+                <label>
+                    <input type="checkbox" id="override-checkbox" onchange="updateCharacterCount()"> Override
+                </label>
+            </div>
+            <input type="text" id="tag-input" placeholder="Enter tags, separated by commas">
+            <button onclick="addNote()">Add Note</button>
+            <h2>Notes</h2>
+            <div id="note-list"></div>
+        </div>
+    </div>
+    <div class="hamburger" onclick="toggleMenu()">
+        &#9776; <!-- Hamburger Icon -->
+    </div>
+    <div class="hamburger-menu" id="hamburgerMenu">
+        <div class="menu-content">
+            <button onclick="toggleMenu()">Close Menu</button>
+            <h3>Tags</h3>
+            <div id="tag-list-hamburger"></div>
+            <div id="auto-export-container-hamburger">
+                <label>Auto export</label>
+                <input type="checkbox" id="auto-export-checkbox-hamburger">
+            </div>
+            <button onclick="exportNotes()">Export</button>
+            <input type="file" id="import-file-hamburger" accept=".csv" style="display: none;" onchange="importNotes(event)">
+            <button onclick="document.getElementById('import-file-hamburger').click()">Import</button>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', (event) => {
+            loadNotes();
+            loadTags();
+            syncCheckboxes();
+        });
 
-       function syncCheckboxes() {
-           const sidebarCheckbox = document.getElementById('auto-export-checkbox');
-           const hamburgerCheckbox = document.getElementById('auto-export-checkbox-hamburger');
+        function syncCheckboxes() {
+            const sidebarCheckbox = document.getElementById('auto-export-checkbox');
+            const hamburgerCheckbox = document.getElementById('auto-export-checkbox-hamburger');
 
-           // Sync initial state
-           hamburgerCheckbox.checked = sidebarCheckbox.checked;
+            // Sync initial state
+            hamburgerCheckbox.checked = sidebarCheckbox.checked;
 
-           sidebarCheckbox.addEventListener('change', () => {
-               hamburgerCheckbox.checked = sidebarCheckbox.checked;
-           });
+            sidebarCheckbox.addEventListener('change', () => {
+                hamburgerCheckbox.checked = sidebarCheckbox.checked;
+            });
 
-           hamburgerCheckbox.addEventListener('change', () => {
-               sidebarCheckbox.checked = hamburgerCheckbox.checked;
-           });
-       }
+            hamburgerCheckbox.addEventListener('change', () => {
+                sidebarCheckbox.checked = hamburgerCheckbox.checked;
+            });
+        }
 
-       function addNote() {
-           const noteInput = document.getElementById('note-input');
-           const tagInput = document.getElementById('tag-input');
-           const overrideCheckbox = document.getElementById('override-checkbox');
-           const noteText = noteInput.value.trim();
-           const tags = tagInput.value.trim().split(',').map(tag => tag.trim()).filter(tag => tag);
+        function addNote() {
+            const noteInput = document.getElementById('note-input');
+            const tagInput = document.getElementById('tag-input');
+            const overrideCheckbox = document.getElementById('override-checkbox');
+            const noteText = noteInput.value.trim().replace(/\n/g, '<br>');
+            const tags = tagInput.value.trim().split(',').map(tag => tag.trim()).filter(tag => tag);
 
-           if (!noteText) {
-               alert('Please enter a note.');
-               return;
-           }
+            if (!noteText) {
+                alert('Please enter a note.');
+                return;
+            }
 
-           if (tags.length === 0) {
-               alert('Please enter at least one tag.');
-               return;
-           }
+            if (tags.length === 0) {
+                alert('Please enter at least one tag.');
+                return;
+            }
 
-           if (!overrideCheckbox.checked && noteText.length > 300) {
-               alert('Note exceeds 300 characters.');
-               return;
-           }
+            if (noteText.length > 300 && !overrideCheckbox.checked) {
+                alert('Note exceeds 300 characters.');
+                return;
+            }
 
-           const notes = JSON.parse(localStorage.getItem('notes')) || [];
-           const newNote = {
-               id: Date.now(),
-               text: noteText,
-               tags: tags,
-               date: new Date().toLocaleString()
-           };
+            const note = {
+                id: Date.now(),
+                text: noteText,
+                tags: tags,
+                date: new Date().toLocaleString()
+            };
 
-           notes.push(newNote);
-           localStorage.setItem('notes', JSON.stringify(notes));
+            let notes = JSON.parse(localStorage.getItem('notes')) || [];
+            notes.push(note);
+            notes.sort((a, b) => b.id - a.id);
+            localStorage.setItem('notes', JSON.stringify(notes));
 
-           noteInput.value = '';
-           tagInput.value = '';
-           updateCharacterCount();
-           loadNotes();
-           loadTags();
+            noteInput.value = '';
+            tagInput.value = '';
 
-           const sidebarCheckbox = document.getElementById('auto-export-checkbox');
-           if (sidebarCheckbox.checked) {
-               exportNotes();
-           }
-       }
+            loadNotes();
+            loadTags();
 
-       function loadNotes() {
-           const notes = JSON.parse(localStorage.getItem('notes')) || [];
-           const noteList = document.getElementById('note-list');
-           noteList.innerHTML = '';
+            if (document.getElementById('auto-export-checkbox').checked) {
+                exportNotes();
+            }
+        }
 
-           notes.sort((a, b) => new Date(b.date) - new Date(a.date));
+        function updateCharacterCount() {
+            const noteInput = document.getElementById('note-input');
+            const characterCount = document.getElementById('character-count');
+            const overrideCheckbox = document.getElementById('override-checkbox');
 
-           notes.forEach(note => {
-               const noteElement = document.createElement('div');
-               noteElement.className = 'note';
-               noteElement.innerHTML = `
-                   <p>${note.text}</p>
-                   <p><strong>Tags:</strong> ${note.tags.join(', ')}</p>
-                   <p><strong>Date:</strong> ${note.date}</p>
-                   <div class="note-actions">
-                       <button class="edit" onclick="editNote(${note.id})">Edit</button>
-                       <button class="delete" onclick="deleteNote(${note.id})">Delete</button>
-                   </div>
-               `;
-               noteList.appendChild(noteElement);
-           });
-       }
+            characterCount.textContent = `${noteInput.value.length}/300 characters`;
 
-       function loadTags() {
-           const notes = JSON.parse(localStorage.getItem('notes')) || [];
-           const tagList = document.getElementById('tag-list');
-           const tagListHamburger = document.getElementById('tag-list-hamburger');
-           const tags = new Set();
+            if (noteInput.value.length > 300) {
+                noteInput.style.borderColor = 'red';
+                if (!overrideCheckbox.checked) {
+                    noteInput.value = noteInput.value.slice(0, 300);
+                    characterCount.textContent = '300/300 characters';
+                }
+            } else {
+                noteInput.style.borderColor = '#e1e4e8';
+            }
+        }
 
-           notes.forEach(note => {
-               note.tags.forEach(tag => tags.add(tag));
-           });
+        function deleteNote(noteId) {
+    if (confirm('Are you sure you want to delete this note?')) {
+        let notes = JSON.parse(localStorage.getItem('notes')) || [];
+        notes = notes.filter(note => note.id !== noteId);
+        localStorage.setItem('notes', JSON.stringify(notes));
+        loadNotes();
+        loadTags();
+    }
+}
 
-           tagList.innerHTML = '';
-           tagListHamburger.innerHTML = '';
+        function editNote(noteId) {
+            let notes = JSON.parse(localStorage.getItem('notes')) || [];
+            const noteIndex = notes.findIndex(note => note.id === noteId);
+            const note = notes[noteIndex];
 
-           tags.forEach(tag => {
-               const tagElement = document.createElement('div');
-               const tagElementHamburger = document.createElement('div');
-               tagElement.className = 'tag';
-               tagElementHamburger.className = 'tag';
-               tagElement.innerText = tag;
-               tagElementHamburger.innerText = tag;
-               tagElement.onclick = () => filterNotesByTag(tag);
-               tagElementHamburger.onclick = () => {
-                   filterNotesByTag(tag);
-                   toggleMenu();
-               };
-               tagList.appendChild(tagElement);
-               tagListHamburger.appendChild(tagElementHamburger);
-           });
-       }
+            // Create an input field and a save button for editing
+            const noteElement = document.querySelector(`[data-id="${noteId}"]`);
+            const noteTextElement = noteElement.querySelector('p:nth-child(1)');
+            const tagsElement = noteElement.querySelector('p:nth-child(2)');
+            const dateElement = noteElement.querySelector('p:nth-child(3)');
 
-       function filterNotesByTag(tag) {
-           const notes = JSON.parse(localStorage.getItem('notes')) || [];
-           const noteList = document.getElementById('note-list');
-           noteList.innerHTML = '';
+            const noteInput = document.createElement('textarea');
+            noteInput.value = note.text.replace(/<br>/g, '\n');
+            noteElement.replaceChild(noteInput, noteTextElement);
 
-           notes.filter(note => note.tags.includes(tag)).forEach(note => {
-               const noteElement = document.createElement('div');
-               noteElement.className = 'note';
-               noteElement.innerHTML = `
-                   <p>${note.text}</p>
-                   <p><strong>Tags:</strong> ${note.tags.join(', ')}</p>
-                   <p><strong>Date:</strong> ${note.date}</p>
-                   <div class="note-actions">
-                       <button class="edit" onclick="editNote(${note.id})">Edit</button>
-                       <button class="delete" onclick="deleteNote(${note.id})">Delete</button>
-                   </div>
-               `;
-               noteList.appendChild(noteElement);
-           });
-       }
+            const tagsInput = document.createElement('input');
+            tagsInput.value = note.tags.join(', ');
+            noteElement.replaceChild(tagsInput, tagsElement);
 
-       function editNote(id) {
-           const notes = JSON.parse(localStorage.getItem('notes')) || [];
-           const note = notes.find(note => note.id === id);
-           if (note) {
-               const newNoteText = prompt('Edit your note:', note.text);
-               const newTags = prompt('Edit your tags (comma separated):', note.tags.join(', '));
-               if (newNoteText !== null && newTags !== null) {
-                   note.text = newNoteText.trim();
-                   note.tags = newTags.split(',').map(tag => tag.trim()).filter(tag => tag);
-                   localStorage.setItem('notes', JSON.stringify(notes));
-                   loadNotes();
-                   loadTags();
-               }
-           }
-       }
+            const saveButton = document.createElement('button');
+            saveButton.textContent = 'Save';
+            saveButton.onclick = function () {
+                note.text = noteInput.value.trim().replace(/\n/g, '<br>');
+                note.tags = tagsInput.value.trim().split(',').map(tag => tag.trim()).filter(tag => tag);
+                note.date = new Date().toLocaleString();
 
-       function deleteNote(id) {
-           let notes = JSON.parse(localStorage.getItem('notes')) || [];
-           notes = notes.filter(note => note.id !== id);
-           localStorage.setItem('notes', JSON.stringify(notes));
-           loadNotes();
-           loadTags();
-       }
+                notes[noteIndex] = note;
+                notes.sort((a, b) => b.id - a.id);
+                localStorage.setItem('notes', JSON.stringify(notes));
+                loadNotes();
+                loadTags();
+            };
 
-       function exportNotes() {
-           const notes = JSON.parse(localStorage.getItem('notes')) || [];
-           let csvContent = "data:text/csv;charset=utf-8,";
-           csvContent += "Text,Tags,Date\n";
-           notes.forEach(note => {
-               const noteRow = `"${note.text.replace(/"/g, '""')}","${note.tags.join(', ')}","${note.date}"\n`;
-               csvContent += noteRow;
-           });
+            noteElement.appendChild(saveButton);
+        }
 
-           const encodedUri = encodeURI(csvContent);
-           const link = document.createElement("a");
-           link.setAttribute("href", encodedUri);
-           link.setAttribute("download", "notes.csv");
-           document.body.appendChild(link);
-           link.click();
-           document.body.removeChild(link);
-       }
+        function searchNotes() {
+            const searchInput = document.getElementById('search-input');
+            const query = searchInput.value.trim().toLowerCase();
 
-       function importNotes(event) {
-           const file = event.target.files[0];
-           if (!file) return;
+            if (!query) {
+                loadNotes();
+                return;
+            }
 
-           const reader = new FileReader();
-           reader.onload = function(e) {
-               const contents = e.target.result;
-               const rows = contents.split('\n').slice(1);
-               const notes =
-               rows.map(row => {
-                   const [text, tags, date] = row.split('","').map(item => item.replace(/(^"|"$)/g, ''));
-                   return {
-                       text: text || "",
-                       tags: tags ? tags.split(',').map(tag => tag.trim()) : [],
-                       date: date || "",
-                       id: Date.now() + Math.random()
-                   };
-               }).filter(note => note.text && note.tags.length > 0 && note.date);
+            let notes = JSON.parse(localStorage.getItem('notes')) || [];
+            const filteredNotes = notes.filter(note => note.text.toLowerCase().includes(query) || note.tags.some(tag => tag.toLowerCase().includes(query)));
 
-               let existingNotes = JSON.parse(localStorage.getItem('notes')) || [];
-               existingNotes = existingNotes.concat(notes);
-               localStorage.setItem('notes', JSON.stringify(existingNotes));
+            displayNotes(filteredNotes);
+        }
 
-               loadNotes();
-               loadTags();
-           };
-           reader.readAsText(file);
-       }
+        function loadNotes() {
+    let notes = JSON.parse(localStorage.getItem('notes')) || [];
+    notes.sort((a, b) => new Date(b.date) - new Date(a.date)); // Sort notes by date in descending order
+    displayNotes(notes); // Pass sorted notes to display function
+}
 
-       function toggleMenu() {
-           const hamburgerMenu = document.getElementById('hamburgerMenu');
-           const sidebar = document.getElementById('sidebar');
-           if (hamburgerMenu.style.display === 'block') {
-               hamburgerMenu.style.display = 'none';
-               sidebar.style.transform = 'translateX(0)';
-           } else {
-               hamburgerMenu.style.display = 'block';
-               sidebar.style.transform = 'translateX(-250px)';
-           }
-       }
+function displayNotes(notes) {
+    const noteList = document.getElementById('note-list');
+    noteList.innerHTML = ''; // Clear existing notes
 
-       function updateCharacterCount() {
-           const noteInput = document.getElementById('note-input');
-           const characterCount = document.getElementById('character-count');
-           const overrideCheckbox = document.getElementById('override-checkbox');
-           const maxChars = 300;
+    notes.forEach(note => {
+        // Create HTML elements for each note
+        const noteElement = document.createElement('div');
+        noteElement.className = 'note';
+        noteElement.setAttribute('data-id', note.id);
+        noteElement.innerHTML = `
+            <p class="note">${note.text}</p>
+            <p><strong>Tags:</strong> ${note.tags.join(', ')}</p>
+            <p><strong>Date:</strong> ${note.date}</p>
+            <div class="note-actions">
+                <button class="edit" onclick="editNote(${note.id})">Edit</button>
+                <button class="delete" onclick="deleteNote(${note.id})">Delete</button>
+                <button class="copy" onclick="copyNoteText(${note.id})">Copy</button>
+            </div>
+        `;
+        noteList.appendChild(noteElement); // Append each note to the list
+    });
+}
 
-           if (overrideCheckbox.checked) {
-               characterCount.textContent = `${noteInput.value.length} characters`;
-               characterCount.style.color = 'inherit';
-           } else {
-               const remainingChars = maxChars - noteInput.value.length;
-               characterCount.textContent = `${noteInput.value.length}/${maxChars} characters`;
-               characterCount.style.color = remainingChars < 0 ? 'red' : 'inherit';
-           }
-       }
+        function loadTags() {
+            const tagList = document.getElementById('tag-list');
+            const tagListHamburger = document.getElementById('tag-list-hamburger');
+            tagList.innerHTML = '';
+            tagListHamburger.innerHTML = '';
 
-       function searchNotes() {
-           const searchInput = document.getElementById('search-input').value.toLowerCase();
-           const notes = JSON.parse(localStorage.getItem('notes')) || [];
-           const noteList = document.getElementById('note-list');
-           noteList.innerHTML = '';
+            let notes = JSON.parse(localStorage.getItem('notes')) || [];
+            let tags = new Set();
 
-           notes.forEach(note => {
-               const noteText = note.text.toLowerCase();
-               const noteTags = note.tags.join(', ').toLowerCase();
-               if (noteText.includes(searchInput) || noteTags.includes(searchInput)) {
-                   const noteElement = document.createElement('div');
-                   noteElement.className = 'note';
+            notes.forEach(note => {
+                note.tags.forEach(tag => tags.add(tag));
+            });
 
-                   const noteContent = `
-                       <p>${note.text}</p>
-                       <p><strong>Tags:</strong> ${note.tags.join(', ')}</p>
-                       <p><strong>Date:</strong> ${note.date}</p>
-                       <div class="note-actions">
-                           <button class="edit" onclick="editNote(${note.id})">Edit</button>
-                           <button class="delete" onclick="deleteNote(${note.id})">Delete</button>
-                       </div>
-                   `;
+            tags.forEach(tag => {
+                const tagElement = document.createElement('div');
+                tagElement.className = 'tag';
+                tagElement.textContent = tag;
+                tagElement.onclick = () => filterNotesByTag(tag);
+                tagList.appendChild(tagElement);
 
-                   noteElement.innerHTML = noteContent;
-                   noteList.appendChild(noteElement);
-               }
-           });
-       }
-   </script>
+                const tagElementHamburger = tagElement.cloneNode(true);
+                tagElementHamburger.onclick = () => filterNotesByTag(tag);
+                tagListHamburger.appendChild(tagElementHamburger);
+            });
+        }
+
+        function filterNotesByTag(tag) {
+            let notes = JSON.parse(localStorage.getItem('notes')) || [];
+            const filteredNotes = notes.filter(note => note.tags.includes(tag));
+            displayNotes(filteredNotes);
+        }
+
+        function exportNotes() {
+    let notes = JSON.parse(localStorage.getItem('notes')) || [];
+    if (notes.length === 0) {
+        alert('No notes to export.');
+        return;
+    }
+
+    let csvContent = 'data:text/csv;charset=utf-8,';
+    csvContent += 'Text,Tags,Date,Time\n'; // Updated to include "Time" as the third header
+
+    notes.forEach(note => {
+        const text = note.text.replace(/,/g, ''); // Remove commas to avoid CSV issues
+        const tags = note.tags.join('|'); // Use pipe character as a tag separator
+        const formattedDate = formatDate(new Date(note.date)); // Format date correctly
+
+        csvContent += `${text},${tags},${formattedDate}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement('a');
+    link.setAttribute('href', encodedUri);
+    link.setAttribute('download', 'notes.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+}
+
+function formatDate(date) {
+    return new Date(date).toLocaleString('en-US', {
+        month: 'numeric',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: 'numeric',
+        second: 'numeric',
+        hour12: true
+    });
+}
+
+// Function to parse date from MM/DD/YYYY, HH:MM:SS AM/PM format
+function parseDate(dateString) {
+    const parts = dateString.split(', ');
+    if (parts.length !== 3) {
+        throw new Error('Invalid date format in CSV: ' + dateString);
+    }
+
+    const datePart = parts[1];
+    const timePart = parts[2];
+
+    const [month, day, year] = datePart.split('/');
+    const [time, period] = timePart.split(' ');
+
+    let [hours, minutes, seconds] = time.split(':');
+    if (period === 'AM' && hours === '12') {
+        hours = '0'; // Handle 12 AM case
+    } else if (period === 'PM' && hours !== '12') {
+        hours = String(parseInt(hours, 10) + 12); // Convert PM hours to 24-hour format
+    }
+
+    return new Date(`${year}-${month}-${day}T${hours}:${minutes}:${seconds}`);
+}
+
+function importNotes(event) {
+    const file = event.target.files[0];
+    if (!file) {
+        console.error('No file selected.');
+        return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = function (e) {
+        const contents = e.target.result;
+        console.log('File contents:', contents); // Debugging: log file contents
+
+        const lines = contents.trim().split('\n').slice(1);
+
+        const newNotes = [];
+        lines.forEach(line => {
+            try {
+                const [text, tags, date, time] = line.split(',');
+
+                // Combine date and time into a single string
+                const dateTimeString = `${date.trim()}, ${time.trim()}`;
+
+                // Parse combined date and time into a Date object
+                const parsedDate = parseDateTime(dateTimeString);
+
+                newNotes.push({
+                    id: Date.now() + Math.random(), // Ensure unique ID
+                    text: text.trim(),
+                    tags: tags ? tags.split('|').map(tag => tag.trim()) : [],
+                    date: parsedDate // Use parsed Date object
+                });
+            } catch (error) {
+                console.error('Error parsing line:', line, error.message);
+            }
+        });
+
+        let notes = JSON.parse(localStorage.getItem('notes')) || [];
+        console.log('Existing notes:', notes); // Debugging: log existing notes
+
+        // Convert dates from stored string to Date objects for comparison
+        notes = notes.map(note => ({
+            ...note,
+            date: new Date(note.date)
+        }));
+
+        // Check for duplicates and add only unique notes
+        newNotes.forEach(newNote => {
+            const duplicate = notes.some(note => 
+                note.text === newNote.text && 
+                note.date.getTime() === newNote.date.getTime()
+            );
+
+            if (!duplicate) {
+                notes.push(newNote);
+            }
+        });
+
+        console.log('Notes after import:', notes); // Debugging: log notes after import
+
+        // Sort notes by date descending
+        notes.sort((a, b) => b.date - a.date);
+
+        // Convert date back to string format for storage and display
+        notes = notes.map(note => ({
+            ...note,
+            date: formatDate(note.date)
+        }));
+
+        localStorage.setItem('notes', JSON.stringify(notes));
+        console.log('Notes saved to localStorage:', notes); // Debugging: log notes saved to localStorage
+
+        loadNotes();
+        loadTags();
+    };
+
+    reader.readAsText(file);
+}
+
+// Function to parse combined date and time into a Date object
+function parseDateTime(dateTimeString) {
+    const [date, time] = dateTimeString.split(', ');
+    const [month, day, year] = date.split('/');
+    const [timePart, period] = time.split(' ');
+
+    let [hours, minutes, seconds] = timePart.split(':');
+    hours = parseInt(hours);
+    if (period === 'AM' && hours === 12) {
+        hours = 0; // Handle 12 AM case
+    } else if (period === 'PM' && hours !== 12) {
+        hours += 12; // Convert PM hours to 24-hour format
+    }
+
+    return new Date(year, month - 1, day, hours, minutes, seconds);
+}
+
+        function toggleMenu() {
+            const menu = document.getElementById('hamburgerMenu');
+            menu.style.display = (menu.style.display === 'none' || !menu.style.display) ? 'flex' : 'none';
+        }
+
+        function copyNoteText(noteId) {
+    let notes = JSON.parse(localStorage.getItem('notes')) || [];
+    const note = notes.find(note => note.id === noteId);
+    if (note) {
+        const tempTextArea = document.createElement('textarea');
+        tempTextArea.value = note.text.replace(/<br>/g, '\n'); // Handle line breaks
+        document.body.appendChild(tempTextArea);
+        tempTextArea.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempTextArea);
+        alert('Note text copied to clipboard!');
+    }
+}
+    </script>
 </body>
 </html>
